@@ -1,0 +1,4 @@
+pandas
+quickfix
+kafka-python
+scikit-learn
