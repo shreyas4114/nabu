@@ -23,11 +23,6 @@ def main():
     producer_thread = threading.Thread(target=produce_data)
     producer_thread.start()
 
-    # Train and assess risk
-    logging.info("Starting risk assessment...")
-    risk_thread = threading.Thread(target=assess_risk)
-    risk_thread.start()
-
     # Securitize debts
     logging.info("Starting debt bundling...")
     bundling_thread = threading.Thread(target=bundle_debts)
