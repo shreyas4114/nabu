@@ -8,7 +8,8 @@ from securitization.bundling import bundle_debts
 # Configure logging to show only INFO level messages and above
 logging.basicConfig(
     level=logging.INFO,  # Only INFO, WARNING, ERROR, and CRITICAL logs will be displayed
-    format="%(asctime)s - %(levelname)s - %(message)s"
+    format="%(asctime)s - %(levelname)s - %(message)s",  # Customize the log format
+    handlers=[logging.StreamHandler()]  # Use StreamHandler for console output
 )
 
 # Suppress all logs from external libraries like Kafka and QuickFIX to prevent clutter
@@ -24,8 +25,8 @@ def initialize_order_book():
 
     try:
         # Example order addition
-        buy_order = Order(order_id=1, side='buy', price=100, quantity=10)
-        sell_order = Order(order_id=2, side='sell', price=95, quantity=5)
+        sell_order = Order(order_id=2, side='sell', price=150, quantity=10)
+        buy_order = Order(order_id=1, side='buy', price=200, quantity=5)
 
         order_book.add_order(buy_order)
         order_book.add_order(sell_order)
@@ -51,26 +52,30 @@ def initialize_order_book():
 
     return order_book
 
-def start_threads():
+def start_threads(order_book):
     """
     Start separate threads for FIX session, data production, and debt bundling.
     """
-    logging.info("Starting threads for FIX session, data production, and debt bundling...")
+    logging.info("Starting threads for data production, and debt bundling...")
     
     try:
         # Start FIX session thread
-        fix_thread = threading.Thread(target=start_fix_session, name="FIXSessionThread")
-        fix_thread.start()
+        # fix_thread = threading.Thread(target=start_fix_session, name="FIXSessionThread")
+        # fix_thread.start()
 
         # Start data producer thread
-        producer_thread = threading.Thread(target=produce_data, name="DataProducerThread")
+        producer_thread = threading.Thread(
+            target=produce_data,
+            args=(order_book,),  # Pass the order book
+            name="DataProducerThread"
+        )
         producer_thread.start()
 
         # Start debt bundling thread
         bundling_thread = threading.Thread(target=bundle_debts, name="DebtBundlingThread")
         bundling_thread.start()
 
-        return fix_thread, producer_thread, bundling_thread
+        return producer_thread, bundling_thread
     except Exception as e:
         logging.error(f"Error while starting threads: {e}")
         raise  # Re-raise the exception to ensure the program stops if thread initialization fails
@@ -86,10 +91,10 @@ def main():
         order_book = initialize_order_book()
 
         # Start threads for other tasks
-        fix_thread, producer_thread, bundling_thread = start_threads()
+        producer_thread, bundling_thread = start_threads(order_book)
 
         # Wait for threads to complete
-        fix_thread.join()
+        # fix_thread.join()
         producer_thread.join()
         bundling_thread.join()
 
@@ -98,6 +103,7 @@ def main():
     except Exception as e:
         logging.error(f"Error during main execution: {e}")
         logging.info("Application terminated with errors.")
+
 
 if __name__ == "__main__":
     main()
